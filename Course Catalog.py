@@ -1,67 +1,101 @@
-from webbrowser import Chrome
+import time
+from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver import Chrome
+
+from Wrappers.Courses import Courses
 from Wrappers.Professors import Professors
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-import time
 
 class CourseCatalog:
     _driver = Chrome()
+
     def __init__(self):
-        self._driver = webdriver.Chrome()
-    def get_title(self, course_code):
-        self._driver.get(f"https://catalog.depaul.edu/search/?search={course_code}")
-        try:
-            wait = WebDriverWait(self._driver, 10)
-            title_element = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'courseblocktitle')))
-            title = title_element.text
-            return title.split('\n')[0]
-        except Exception as e:
-            print(f"Failed to get title for {course_code}: {e}")
-            return None
-    def get_description(self, course_code):
-        self._driver.get(f"https://catalog.depaul.edu/search/?search={course_code}")
-        try:
-            wait = WebDriverWait(self._driver, 10)
-            description_element = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'courseblockdesc')))
-            description = description_element.text
+        self._driver = Chrome()
+        self.wait = WebDriverWait(self._driver, 10)
+        self.obfuscated_courses = []  # courses that are no longer being actively taught
 
-            prereqs_element = self._driver.find_element(By.CLASS_NAME, 'courseblockextra')
-            prereqs = prereqs_element.text if prereqs_element else "None"
-
-            return description, prereqs
-        except Exception as e:
-            print(f"Failed to get description and prereqs for {course_code}: {e}")
-            return None, None
-
-    def getCourseData(self):
+    def get_course_data(self):
         all_professors = Professors.get_all(Professors.Cols.FACULTY_ID)
         for professor in all_professors:
-            print(professor[Professors.Cols.FACULTY_ID])
-            self.scrape_courses(FACULTY_ID)
+            self.scrape_courses(professor[Professors.Cols.FACULTY_ID])
 
     def scrape_courses(self, faculty_id):
         self._driver.get(f"https://www.cdm.depaul.edu/Faculty-and-Staff/Pages/faculty-info.aspx?fid={faculty_id}")
-        wait = WebDriverWait(self._driver, 10)
-        wait.until(EC.presence_of_element_located((By.ID, 'facultyEvaluations')))
-        faculty_courses = self._driver.find_element(By.ID, 'facultyEvaluations').find_elements(By.CLASS_NAME, 'facultyCourse')
+        time.sleep(1)
 
-        for course in faculty_courses:
+        self.wait.until(EC.presence_of_element_located((By.ID, 'facultyEvaluations')))
+        faculty_courses = self.fetch_faculty_courses()
+        position = 0
+        print(faculty_id)
+        while position < len(faculty_courses):
+            course = faculty_courses[position]
             anchor = course.find_element(By.TAG_NAME, 'a')
             spans = anchor.find_elements(By.TAG_NAME, 'span')
-            code_and_section = spans[0].get_attribute('innerText')
-            code = code_and_section[:code_and_section.find('-')].strip()
 
-            title = self.get_title(code)
-            description, prereqs = self.get_description(code)
+            code = self.extract_course_code(spans)
+            title = self.extract_course_title(spans)
+            description = None
+            prereqs = None
+
+            db_course = Courses.get_single_record({Courses.Cols.CODE : code}, Courses.Cols.CODE)
+
+            if db_course:
+                print(f"Skipping course {code} because it already exists in the db as {db_course}.")
+                position += 1
+                continue
+
+            if code not in self.obfuscated_courses:
+                description, prereqs = self.get_description_and_prereqs(code)
+            else:
+                print(f"Skipping {code} because we know it's not taught anymore... ")
+
+            faculty_courses = self.fetch_faculty_courses()
+            position += 1
 
             print(f"Course Code: {code}")
             print(f"Course Title: {title}")
-            print(f"Course Description: {description}")
-            print(f"Prerequisites: {prereqs}")
+            print(f"Course Description: {description if description else 'N/A'}")
+            print(f"Prerequisites: {prereqs if prereqs else 'N/A'}")
             print("-------")
+
+    def fetch_faculty_courses(self):
+        self.wait.until(EC.presence_of_element_located((By.ID, 'facultyEvaluations')))
+        return self._driver.find_element(By.ID, 'facultyEvaluations').find_elements(By.CLASS_NAME, 'facultyCourse')
+
+    def get_description_and_prereqs(self, course_code):
+        self._driver.get(f"https://catalog.depaul.edu/search/?search={course_code}")
+        WebDriverWait(self._driver, 10).until(EC.presence_of_element_located((By.ID, 'fssearchresults')))
+        search_results_div = self._driver.find_element(By.ID, "fssearchresults")
+
+        try:
+            search_course_result = search_results_div.find_element(By.CLASS_NAME, "search-courseresult")
+            courseblock_elements = search_course_result.find_element(By.CLASS_NAME, "courseblock").find_elements(By.TAG_NAME, "p")
+            description = courseblock_elements[1].text
+            prereqs = courseblock_elements[-1].text
+
+            # append to a list of courses that have already been inserted into the db
+            self._driver.back()
+            return description, prereqs
+
+        except NoSuchElementException:
+            self.obfuscated_courses.append(course_code)
+            self._driver.back()
+            return None, None
+
+    @classmethod
+    def extract_course_title(cls, spans):
+        title = spans[1].get_attribute('innerText')
+        return title
+
+    @classmethod
+    def extract_course_code(cls, spans):
+        code_and_section = spans[0].get_attribute('innerText')
+        code = code_and_section[:code_and_section.find('-')].strip()
+        return code
+
 
 if __name__ == '__main__':
     catalog = CourseCatalog()
