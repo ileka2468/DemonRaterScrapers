@@ -19,15 +19,16 @@ class AbstractTable:
         return cls._db.from_(cls._table_name).select(','.join(selected_columns) if selected_columns else cls.Cols.ALL).execute().data
 
     @classmethod
-    def get_single_record(cls, where_map: dict, *selected_columns) -> dict:
+    def get_single_record(cls, where_map: dict, *selected_columns) -> dict | None:
         cls._validate_columns(list(selected_columns))
         assert isinstance(where_map, dict) and len(where_map) > 0, \
             "Where map must be a dictionary and have at least one key value pair"
 
         quoted_columns = [f'"{column}"' for column in selected_columns]
         code = f"cls._db.from_('{cls._table_name}').select({','.join(quoted_columns)}){cls._generate_equalities(where_map)}"
-        return eval(code)[0]
-
+        if eval(code):
+            return eval(code)[0]
+        return None
     @classmethod
     def get_multiple_records(cls, where_map: dict, *selected_columns) -> list:
         cls._validate_columns(list(selected_columns))

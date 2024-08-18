@@ -1,4 +1,4 @@
-from AbstractTable import AbstractTable
+from Wrappers.AbstractTable import AbstractTable
 
 
 class Courses(AbstractTable):
