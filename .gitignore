@@ -1,3 +1,8 @@
 /Professor_Avatars
 /prof_images
 .env
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+.idea
