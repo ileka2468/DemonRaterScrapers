@@ -1,21 +1,18 @@
 from openai import OpenAI
-from dotenv import load_dotenv
 from supabase_client import SupaBaseClient
 
 supabase = SupaBaseClient.instance()
 client = OpenAI()
 
-# courses = supabase.from_('Courses').select("*").execute().data
-#
-# for course in courses:
-#     input_text = f"Course code: {course['code']}\nCourse title: {course['title']}\nCourse description: {course['description']}\nCourse prereqs: {course['prereqs']}"
-#     print(input_text)
-#     response = client.embeddings.create(
-#         input=input_text,
-#         model="text-embedding-3-large"
-#     )
-#     embedding = response.data[0].embedding
-#     supabase.from_('Courses').update({'embedding': embedding}).eq('course_id', course['course_id']).execute()
+
+def generate_embeddings(code: str, title: str, description: str, prereqs: str) -> list[float]:
+    input_text = f"Course code: {code}\nCourse title: {title}\nCourse description: {description}\nCourse prereqs: {prereqs}"
+    # print(input_text)
+    response = client.embeddings.create(
+        input=input_text,
+        model="text-embedding-3-large"
+    )
+    return response.data[0].embedding
 
 
 def test():
@@ -41,5 +38,3 @@ def test():
     )
 
     print(response.choices[0].message.content)
-
-test()

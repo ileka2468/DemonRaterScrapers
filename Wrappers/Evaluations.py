@@ -17,10 +17,11 @@ class Evaluations(AbstractTable):
         WORKLOAD = "workload"
         ORGANIZATION = "material_organization"
         CHALLENGE = "course_challenge"
-
         RESPONSIVENESS = "instructor_responsiveness"
         SPEED = "grading_speed"
         RESPONSES = "responses"
         SCORE = "score"
         ADJUSTED_SCORE = "adjusted_score"
-        CH_ID = "ch_id"
+
+        class Foreign(AbstractTable.Cols.Foreign):
+            CH_ID = ("ch_id", CourseHistory)
