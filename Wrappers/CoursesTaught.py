@@ -9,5 +9,7 @@ class CoursesTaught(AbstractTable):
 
     class Cols(AbstractTable.Cols):
         COURSES_TAUGHT_ID = "ctghtid"
-        COURSE_CODE_ID = "course_code_id"
-        PROFESSOR_ID = "professor_id"
+
+        class Foreign(AbstractTable.Cols.Foreign):
+            COURSE_CODE_ID = ("course_code_id", Courses)
+            PROFESSOR_ID = ("professor_id", Professors)

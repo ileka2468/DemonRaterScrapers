@@ -3,6 +3,7 @@ from Wrappers.AbstractTable import AbstractTable
 
 class Courses(AbstractTable):
     _table_name = "Courses"
+    _joinable_tables = []
 
     class Cols(AbstractTable.Cols):
         COURSE_ID = "course_id"
@@ -11,3 +12,6 @@ class Courses(AbstractTable):
         DESCRIPTION = "description"
         PREREQS = "prereqs"
         EMBEDDING = "embedding"
+
+        class Foreign(AbstractTable.Cols.Foreign):
+            pass

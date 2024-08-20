@@ -3,6 +3,7 @@ from Wrappers.AbstractTable import AbstractTable
 
 class Professors(AbstractTable):
     _table_name = "Professors"
+    _joinable_tables = []
 
     class Cols(AbstractTable.Cols):
         PROFESSOR_ID = "professor_id"
@@ -16,3 +17,10 @@ class Professors(AbstractTable):
         PROFILE_PICTURE = "profile_piture"
         FACULTY_ID = "faculty_id"
         RMP_RATING_DISTRO = "rmp_rating_distro"
+
+        class Foreign(AbstractTable.Cols.Foreign):
+            pass
+
+
+if __name__ == '__main__':
+    print(Professors.get_all(Professors.Cols.ALL))
