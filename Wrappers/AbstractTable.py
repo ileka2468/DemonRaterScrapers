@@ -6,7 +6,7 @@ from httpx import RemoteProtocolError
 from supabase_client import SupaBaseClient
 
 # Configure the logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+#logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 class AbstractTable:

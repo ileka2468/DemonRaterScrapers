@@ -17,6 +17,8 @@ class Professors(AbstractTable):
         PROFILE_PICTURE = "profile_piture"
         FACULTY_ID = "faculty_id"
         RMP_RATING_DISTRO = "rmp_rating_distro"
+        Bio_ID = "bio"
+        Research = "research_area"
 
         class Foreign(AbstractTable.Cols.Foreign):
             pass
