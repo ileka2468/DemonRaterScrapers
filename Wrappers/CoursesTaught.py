@@ -1,6 +1,6 @@
-from AbstractTable import AbstractTable
-from Courses import Courses
-from Professors import Professors
+from Wrappers.AbstractTable import AbstractTable
+from Wrappers.Courses import Courses
+from Wrappers.Professors import Professors
 
 
 class CoursesTaught(AbstractTable):
