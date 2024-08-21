@@ -7,11 +7,11 @@ from supabase_client import SupaBaseClient
 from MemberLevelEnum import MemberLevel
 
 # Configure the logging
-logging.basicConfig(level=logging.CRITICAL, format='%(asctime)s - %(levelname)s - %(message)s')
 
 FOREIGN_COLUMN_NAME_OFFSET = 0
 FOREIGN_TABLE_NAME_OFFSET = 1
 
+#logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class AbstractTable:
     _table_name = ""  # Default value, should be overridden by subclasses
