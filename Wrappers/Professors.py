@@ -23,6 +23,5 @@ class Professors(AbstractTable):
         class Foreign(AbstractTable.Cols.Foreign):
             pass
 
-
-if __name__ == '__main__':
-    print(Professors.get_all(Professors.Cols.ALL))
+        class _Joinable(AbstractTable.Cols._Joinable):
+            pass

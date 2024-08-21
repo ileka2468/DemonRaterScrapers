@@ -4,10 +4,14 @@ import logging
 from itertools import chain
 from httpx import RemoteProtocolError
 from supabase_client import SupaBaseClient
+from MemberLevelEnum import MemberLevel
 
 # Configure the logging
-#logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
+FOREIGN_COLUMN_NAME_OFFSET = 0
+FOREIGN_TABLE_NAME_OFFSET = 1
+
+#logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class AbstractTable:
     _table_name = ""  # Default value, should be overridden by subclasses
@@ -17,6 +21,9 @@ class AbstractTable:
         ALL = "*"
 
         class Foreign:
+            pass
+
+        class _Joinable:
             pass
 
     _db = SupaBaseClient.instance()
@@ -58,21 +65,17 @@ class AbstractTable:
 
     @classmethod
     def is_join(cls, selected_columns):
-        foreign_keys = [foreign_column for foreign_column in selected_columns if isinstance(foreign_column, tuple)]
+        foreign_keys = []
+
+        for column in selected_columns:
+            for foreign_member_tuple in cls._get_members(MemberLevel.FOREIGN_MEMBERS):
+                if column in foreign_member_tuple:
+                    foreign_keys.append(foreign_member_tuple)
+
         if len(foreign_keys) > 0:
             return True, foreign_keys
         else:
             return False, []
-
-    @classmethod
-    def parse_columns(cls, selected_columns) -> list:
-        columns = []
-        for data in selected_columns:
-            if isinstance(data, tuple):
-                columns.append(data[0])
-            else:
-                columns.append(data)
-        return columns
 
     @classmethod
     def get_multiple_records(cls, where_map: dict, *selected_columns) -> list:
@@ -115,37 +118,39 @@ class AbstractTable:
 
     @classmethod
     def _validate_columns(cls, columns: list):
-        members = [member_tuple for member_tuple in cls._get_members()]
+        members = [member_tuple for member_tuple in cls._get_members(MemberLevel.ALL_MEMBERS)]
         for column in columns:
             if column not in members:
                 found = False
                 for joinable_table in cls._joinable_tables:
-                    joinable_members = [member_tuple for member_tuple in joinable_table._get_members()]
+                    joinable_members = [member_tuple for member_tuple in joinable_table._get_members(MemberLevel.ALL_MEMBERS)]
                     if column in joinable_members:
                         found = True
                         break
                 if not found:
                     all_members = members + list(chain.from_iterable(
-                        [table.get_table_name() + "." + member_tuple for member_tuple in table._get_members()] for table
+                        [table.get_table_name() + "." + member_tuple for member_tuple in table._get_members(MemberLevel.ALL_MEMBERS)] for table
                         in
                         cls._joinable_tables))
                     raise ValueError(
                         f"Column {column} not found in this tables acceptable columns or joinable table columns: {all_members}")
 
     @classmethod
-    def _get_members(cls):
+    def _get_members(cls, member_level: MemberLevel) -> list:
         members = []
-        for i in inspect.getmembers_static(cls.Cols):
-            if not i[0].startswith('_'):
-                if not inspect.ismethod(i[1]):
-                    if not inspect.isclass(i[1]):
-                        members.append(i[1])
+        if member_level in [MemberLevel.MEMBERS, MemberLevel.ALL_MEMBERS]:
+            for i in inspect.getmembers_static(cls.Cols):
+                if not i[0].startswith('_'):
+                    if not inspect.ismethod(i[1]):
+                        if not inspect.isclass(i[1]):
+                            members.append(i[1])
 
-        for i in inspect.getmembers_static(cls.Cols.Foreign):
-            if not i[0].startswith('_'):
-                if not inspect.ismethod(i[1]):
-                    if not inspect.isclass(i[1]):
-                        members.append(i[1])
+        if member_level in [MemberLevel.FOREIGN_MEMBERS, MemberLevel.ALL_MEMBERS]:
+            for i in inspect.getmembers_static(cls.Cols._Joinable):
+                if not i[0].startswith('_'):
+                    if not inspect.ismethod(i[1]):
+                        if not inspect.isclass(i[1]):
+                            members.append(i[1])
         return members
 
     @classmethod

@@ -15,3 +15,6 @@ class Courses(AbstractTable):
 
         class Foreign(AbstractTable.Cols.Foreign):
             pass
+
+        class _Joinable(AbstractTable.Cols._Joinable):
+            pass
