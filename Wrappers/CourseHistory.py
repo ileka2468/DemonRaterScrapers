@@ -15,6 +15,11 @@ class CourseHistory(AbstractTable):
         CH_END_YEAR = "end_year"
 
         class Foreign(AbstractTable.Cols.Foreign):
+            CH_COURSE = "course"
+            CH_TERM = "term"
+            CH_PROFESSOR_ID = "professor_id"
+
+        class _Joinable(AbstractTable.Cols._Joinable):
             CH_COURSE = ("course", Courses)
             CH_TERM = ("term", Terms)
             CH_PROFESSOR_ID = ("professor_id", Professors)

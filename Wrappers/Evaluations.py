@@ -24,4 +24,7 @@ class Evaluations(AbstractTable):
         ADJUSTED_SCORE = "adjusted_score"
 
         class Foreign(AbstractTable.Cols.Foreign):
+            CH_ID = "ch_id"
+
+        class _Joinable(AbstractTable.Cols._Joinable):
             CH_ID = ("ch_id", CourseHistory)
