@@ -4,7 +4,7 @@ import logging
 from itertools import chain
 from httpx import RemoteProtocolError
 from supabase_client import SupaBaseClient
-from MemberLevelEnum import MemberLevel
+from Wrappers.MemberLevelEnum import MemberLevel
 
 # Configure the logging
 
